@@ -52,6 +52,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.uf2_release.outputs.upload_url }}
-          asset_path: ../../ConsoleReleases/picontrol-atari2600.uf2
+          asset_path: ./ConsoleReleases/picontrol-atari2600.uf2
           asset_name: picontrol-atari2600.uf2
           asset_content_type: application/octet-stream
