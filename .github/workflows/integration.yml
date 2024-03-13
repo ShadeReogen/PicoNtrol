@@ -35,7 +35,7 @@ jobs:
           echo Add other actions to build,
           echo test, and deploy your project.
   release-project:
-    runs-on: win11lmao
+    runs-on: ubuntu-latest
     name: Release PicoNtrol to Git release
     steps:
       - name: Create Release
