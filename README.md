@@ -1,3 +1,4 @@
+
 # PicoNtrol - the Pico BT Controller Adapter.
 ## Overview
 PicoNtrol is a Bluetooth Adapter powered by a Raspberry Pi Pico W that plugs straight into the native controller port of supported retro consoles.
@@ -58,7 +59,9 @@ If you used the recommended cable, the Pico W should boot up as soon as you turn
 
 |Controller  | Atari 2600| NES|
 |--|--|--|
-| Xbox Series X |:white_check_mark:|:red_circle:|
+| Xbox Series X |:white_check_mark:|:x:|
+|Switch Pro|:soon:|:x:|
+|DualShock 4|:soon:|:x:|
 
 
 ### Mega Drive 9 Pin Cable AE
