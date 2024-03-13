@@ -6,7 +6,7 @@ PicoNtrol is a WIP hobbyist project in it's very early days designed for enthusi
 ### Risks and Responsibilities
 ### ⚠️Warning: Use PicoNtrol at Your Own Risk⚠️
 
- - **Potential Console Damage:** Incorrect wiring or installation may damage your console. Ensure that you follow the instructions carefully, and double-check all connections before powering on your console. Check the list of supported hardware below. Anything not included is no man's land and has not been tried before, by me at least.
+ - **Potential Console Damage:** Incorrect wiring or installation may damage your console. Ensure that you follow the instructions carefully, and double-check all connections before powering on your console. Check the list of [supported hardware below](https://github.com/ShadeReogen/PicoNtrol?tab=readme-ov-file#supported-hardware). Anything not included is no man's land and has not been tried before, by me at least.
 
  - **User Responsibility:** By using PicoNtrol, you acknowledge and accept the risks associated with modifying your console. Any damage caused to your console or Pico W during the creation, installation or use of PicoNtrol is solely your responsibility.
 
