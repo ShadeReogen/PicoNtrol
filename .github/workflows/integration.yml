@@ -46,17 +46,11 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: |
-            Changes in this Release
-            - First Change
-            - Second Change
-          draft: false
-          prerelease: false
       - name: Upload uf2
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.uf2_release.outputs.upload_url }}
-          asset_path: ./ConsoleReleases/picontrol-atari2600.uf2
+          asset_path: ../../ConsoleReleases/picontrol-atari2600.uf2
           asset_name: picontrol-atari2600.uf2
