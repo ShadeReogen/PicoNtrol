@@ -1,0 +1,165 @@
+menu "Bluepad32"
+
+    choice BLUEPAD32_PLATFORM
+        bool "Target platform"
+        default BLUEPAD32_PLATFORM_UNIJOYSTICLE
+        help
+            Select the Bluepad32 target platform.
+
+        config BLUEPAD32_PLATFORM_AIRLIFT
+            bool "AirLift"
+            help
+                Targets Adafruit devices that have an AirLift co-processor,
+                like the Adafruit Metro M4 Express AirLift.
+
+        config BLUEPAD32_PLATFORM_ARDUINO
+            bool "Arduino"
+            depends on ENABLE_ARDUINO_DEPENDS
+            help
+                Targets ESP32 devices, like the ESP32 Mini Dev Kit.
+                To be used with ESP32 Core for Arduino component.
+
+        config BLUEPAD32_PLATFORM_MIGHTYMIGGY
+            bool "MightyMiggy"
+            help
+                Targets MightyMiggy device.
+
+
+        config BLUEPAD32_PLATFORM_NINA
+            bool "NINA"
+            depends on SPI_FLASH_USE_LEGACY_IMPL
+            help
+                Targets Arduino devices that have the NINA co-processor,
+                like the Arduino Nano RP2040 Connect.
+                Requires "Component config" -> "Spi Flasher Driver" -> "Use the legacy..." to be enabled.
+
+        config BLUEPAD32_PLATFORM_UNIJOYSTICLE
+            bool "Unijoysticle"
+            help
+                Targets Unijoysticle 2 / Unijoysticle 2+ devices.
+
+        config BLUEPAD32_PLATFORM_CUSTOM
+            bool "Custom"
+            help
+                Custom platform, provided by the user/vendor
+
+        config BLUEPAD32_PLATFORM_MAKEFILE
+            bool "Decided by Makefile"
+            help
+                Legacy option. Defined by PLATFORM environment variable.
+                Used when compiling Bluepad32 using Makefile.
+
+    endchoice
+
+    config BLUEPAD32_MAX_DEVICES
+        int  "Maximum of connected gamepads"
+        default 4
+        help
+        The maximum number of gamepads that can be connected at the same time.
+
+        This limit is defined at compile-time because Bluepad32 tries not to use malloc.
+        The higher the number, the more RAM it will take.
+
+    config BLUEPAD32_GAP_SECURITY
+        bool "Enable GAP Security"
+        default y
+        help
+            When enabled, it will set GAP Security level to 2.
+            This allows Nintendo Switch Pro controller to connect successfully.
+
+            But when enabled, DualShock 3 gamepad fails to connect.
+
+            Only disable it if you want to use DualShock 3 gamepads.
+
+
+    config BLUEPAD32_UART_OUTPUT_ENABLE
+        bool "Enable UART output"
+        default  y
+        depends on !BLUEPAD32_PLATFORM_AIRLIFT && !BLUEPAD32_PLATFORM_NINA
+        help
+            Enables UART output (console output).
+            Highly recommended for debugging purposes.
+            But must be disabled on AirLift / NINA platforms.
+
+        choice BLUEPAD32_LOG_LEVEL
+            bool "Log verbosity"
+            default BLUEPAD32_LOG_LEVEL_INFO
+            depends on BLUEPAD32_UART_OUTPUT_ENABLE
+            help
+                Specify how much output to see in logs.
+
+        config BLUEPAD32_LOG_LEVEL_NONE
+            bool "No output"
+        config BLUEPAD32_LOG_LEVEL_ERROR
+            bool "Error"
+        config BLUEPAD32_LOG_LEVEL_INFO
+            bool "Info"
+        config BLUEPAD32_LOG_LEVEL_DEBUG
+            bool "Debug"
+    endchoice
+
+    config BLUEPAD32_LOG_LEVEL
+        int
+        default 0 if BLUEPAD32_LOG_LEVEL_NONE
+        default 1 if BLUEPAD32_LOG_LEVEL_ERROR
+        default 2 if BLUEPAD32_LOG_LEVEL_INFO
+        default 3 if BLUEPAD32_LOG_LEVEL_DEBUG
+
+    config BLUEPAD32_USB_CONSOLE_ENABLE
+        bool "Enable USB Console"
+        default  y
+        depends on BLUEPAD32_UART_OUTPUT_ENABLE
+        help
+            Enables the USB console.
+            User can interact with the Bluepad32 firmware via commands.
+
+    config BLUEPAD32_CONSOLE_NVS_COMMAND_ENABLE
+        bool "Enable NVS console commands"
+        default  n
+        depends on BLUEPAD32_USB_CONSOLE_ENABLE
+        help
+            Enables the NVS console commands. Useful for debugging.
+
+    config BLUEPAD32_ENABLE_BLE_BY_DEFAULT
+        bool "Enable BLE by default (beta)"
+        depends on BT_ENABLED
+        default  y
+        help
+            Enables Bluetooth Low Energy by default.
+            Needed for some mice and gamepads that only work with BLE.
+            Can be overriden from the console by using the command "ble_enabled"
+
+    config BLUEPAD32_UNIJOYSTICLE_ENABLE_SWAP_FOR_C64
+        bool "Enable Swap Button on Unijoysticle2 C64"
+        depends on BLUEPAD32_PLATFORM_UNIJOYSTICLE
+        default y
+        help
+            Enables Swap button in for the Unijoysticle2 C64.
+            By enabling it, if the firmware is used in the FlashParty Edition,
+            then the Swap button might trigger unexpectedly.
+            So, unless you are using FlashParty Edition, leave this feature enabled.
+
+    config BLUEPAD32_MAX_ALLOWLIST
+        int  "Maximum size of the Bluetooth allowlist"
+        default 4
+        help
+        The maximum of addresses that can be inserted in the Bluetooth allowlist.
+
+        This limit is defined at compile-time because Bluepad32 tries not to use malloc.
+        The higher the number, the more RAM it will take.
+
+    config BLUEPAD32_ENABLE_VIRTUAL_DEVICE_BY_DEFAULT
+        bool "Enable Virtual Devices by default"
+        default n
+        help
+            A Virtual Device is when a controller like DualSense or DualShock4
+            supports also mouse (it is a touchpad, but converted to mouse).
+            In this case the "mouse" will represent a virtual device.
+            When this happends, Bluepad32 reports that two devices are connected:
+            a gamepad and a mouse.
+            The "gamepad device" has the "mouse virtual device" as child device.
+            When the controller disconnects, or when the "gamepad device"
+            is forced to disconnect then both devices will be disconnected.
+            Can be overriden from the console by using the command "virtual_device_enabled"
+
+endmenu
