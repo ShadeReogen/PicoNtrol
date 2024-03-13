@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: PicoNtrol
 
 # Controls when the workflow will run
 on:
@@ -34,3 +34,29 @@ jobs:
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
+  release-project:
+    runs-on: win11lmao
+    name: Release PicoNtrol to Git release
+    steps:
+      - name: Create Release
+        id: uf2_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.rel_num }}
+          release_name: Release ${{ github.rel_num }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: false
+          prerelease: false
+      - name: Upload uf2
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.uf2_release.outputs.upload_url }}
+          asset_path: ./ConsoleReleases/picontrol-atari2600.uf2
+          asset_name: picontrol-atari2600.uf2
