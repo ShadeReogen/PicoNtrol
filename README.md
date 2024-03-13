@@ -49,7 +49,16 @@ If you're sure you wired everything correctly, you may now plug the cable into t
 If you used the recommended cable, the Pico W should boot up as soon as you turn on your console.
 ⚠️Again, I'm not responsible for any damage you might cause to your hardware⚠️
 
+# Supported Hardware
+|Console|Status  |
+|--|--|
+| Atari 2600 | :white_check_mark: OK|
+|NES|:red_circle: In developement|
+#
 
+|Controller  | Atari 2600| NES|
+|--|--|--|
+| Xbox Series X |:white_check_mark:|:red_circle:|
 
 
 ### Mega Drive 9 Pin Cable AE
