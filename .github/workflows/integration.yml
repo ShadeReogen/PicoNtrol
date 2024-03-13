@@ -54,4 +54,4 @@ jobs:
           upload_url: ${{ steps.uf2_release.outputs.upload_url }}
           asset_path: ../../ConsoleReleases/picontrol-atari2600.uf2
           asset_name: picontrol-atari2600.uf2
-          asset_content_type: application/zip
+          asset_content_type: application/octet-stream
