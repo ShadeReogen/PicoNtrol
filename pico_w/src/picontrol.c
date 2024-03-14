@@ -27,17 +27,17 @@ static void trigger_event_on_gamepad(uni_hid_device_t *d);
 //
 // Platform Overrides
 //
-static void my_platform_init(int argc, const char **argv)
+static void picontrol_init(int argc, const char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    logi("my_platform: init()\n");
+    logi("picontrol: init()\n");
 }
 
-static void my_platform_on_init_complete(void)
+static void picontrol_on_init_complete(void)
 {
-    logi("my_platform: on_init_complete()\n");
+    logi("picontrol: on_init_complete()\n");
 
     // Safe to call "unsafe" functions since they are called from BT thread
 
@@ -67,7 +67,7 @@ static void my_platform_on_init_complete(void)
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
 }
 
-static void my_platform_on_device_connected(uni_hid_device_t *d)
+static void picontrol_on_device_connected(uni_hid_device_t *d)
 {
     logi("PicoNtrol: device connected: %p\n", d);
     if (d->report_parser.set_rumble != NULL)
@@ -76,20 +76,20 @@ static void my_platform_on_device_connected(uni_hid_device_t *d)
     }
 }
 
-static void my_platform_on_device_disconnected(uni_hid_device_t *d)
+static void picontrol_on_device_disconnected(uni_hid_device_t *d)
 {
     logi("PicoNtrol: device disconnected: %p\n", d);
 }
 
-static uni_error_t my_platform_on_device_ready(uni_hid_device_t *d)
+static uni_error_t picontrol_on_device_ready(uni_hid_device_t *d)
 {
-    logi("my_platform: device ready: %p\n", d);
+    logi("picontrol: device ready: %p\n", d);
 
     // You can reject the connection by returning an error.
     return UNI_ERROR_SUCCESS;
 }
 
-static void my_platform_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
+static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
 {
     static uint8_t leds = 0;
     static uint8_t enabled = true;
@@ -248,14 +248,14 @@ static void my_platform_on_controller_data(uni_hid_device_t *d, uni_controller_t
     }
 }
 
-static const uni_property_t *my_platform_get_property(uni_property_idx_t idx)
+static const uni_property_t *picontrol_get_property(uni_property_idx_t idx)
 {
     // Deprecated
     ARG_UNUSED(idx);
     return NULL;
 }
 
-static void my_platform_on_oob_event(uni_platform_oob_event_t event, void *data)
+static void picontrol_on_oob_event(uni_platform_oob_event_t event, void *data)
 {
     switch (event)
     {
@@ -267,11 +267,11 @@ static void my_platform_on_oob_event(uni_platform_oob_event_t event, void *data)
     case UNI_PLATFORM_OOB_BLUETOOTH_ENABLED:
         // When the "bt scanning" is on / off. Could by triggered by different events
         // Useful to notify the user
-        logi("my_platform_on_oob_event: Bluetooth enabled: %d\n", (bool)(data));
+        logi("picontrol_on_oob_event: Bluetooth enabled: %d\n", (bool)(data));
         break;
 
     default:
-        logi("my_platform_on_oob_event: unsupported event: 0x%04x\n", event);
+        logi("picontrol_on_oob_event: unsupported event: 0x%04x\n", event);
     }
 }
 
@@ -308,18 +308,18 @@ static void trigger_event_on_gamepad(uni_hid_device_t *d)
 //
 // Entry Point
 //
-struct uni_platform *get_my_platform(void)
+struct uni_platform *get_picontrol(void)
 {
     static struct uni_platform plat = {
-        .name = "My Platform",
-        .init = my_platform_init,
-        .on_init_complete = my_platform_on_init_complete,
-        .on_device_connected = my_platform_on_device_connected,
-        .on_device_disconnected = my_platform_on_device_disconnected,
-        .on_device_ready = my_platform_on_device_ready,
-        .on_oob_event = my_platform_on_oob_event,
-        .on_controller_data = my_platform_on_controller_data,
-        .get_property = my_platform_get_property,
+        .name = "PicoNtrol",
+        .init = picontrol_init,
+        .on_init_complete = picontrol_on_init_complete,
+        .on_device_connected = picontrol_on_device_connected,
+        .on_device_disconnected = picontrol_on_device_disconnected,
+        .on_device_ready = picontrol_on_device_ready,
+        .on_oob_event = picontrol_on_oob_event,
+        .on_controller_data = picontrol_on_controller_data,
+        .get_property = picontrol_get_property,
     };
 
     return &plat;
