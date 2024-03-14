@@ -61,7 +61,7 @@ If you used the recommended cable, the Pico W should boot up as soon as you turn
 |--|--|--|
 | Xbox Series X |:white_check_mark:|:x:|
 |Switch Pro|:soon:|:x:|
-|DualShock 4|:soon:|:x:|
+|DualShock 4|:white_check_mark:|:x:|
 
 
 ### Mega Drive 9 Pin Cable AE
