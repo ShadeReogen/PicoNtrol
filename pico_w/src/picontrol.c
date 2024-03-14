@@ -122,7 +122,7 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
         int y = gp->axis_y;
 
         // DEBUG: Print Left stick Axis
-        logi("Axis z: %d, Axis y: %d\n", x, y);
+        //logi("Axis z: %d, Axis y: %d\n", x, y);
 
         if (gp->dpad != 0 || x > 50 || y > 50 || x < -50 || y < -50)
         {
