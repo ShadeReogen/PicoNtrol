@@ -54,7 +54,7 @@ If you used the recommended cable, the Pico W should boot up as soon as you turn
 |Console|Status  |
 |--|--|
 | Atari 2600 | :white_check_mark: OK|
-|NES|:red_circle: In developement|
+|NES|:construction: In developement|
 #
 
 |Controller  | Atari 2600| NES|
