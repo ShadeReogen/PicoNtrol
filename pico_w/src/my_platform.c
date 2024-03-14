@@ -22,19 +22,21 @@
 #define FIRE_BTN 4
 
 // Declarations
-static void trigger_event_on_gamepad(uni_hid_device_t* d);
+static void trigger_event_on_gamepad(uni_hid_device_t *d);
 
 //
 // Platform Overrides
 //
-static void my_platform_init(int argc, const char** argv) {
+static void my_platform_init(int argc, const char **argv)
+{
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
     logi("my_platform: init()\n");
 }
 
-static void my_platform_on_init_complete(void) {
+static void my_platform_on_init_complete(void)
+{
     logi("my_platform: on_init_complete()\n");
 
     // Safe to call "unsafe" functions since they are called from BT thread
@@ -65,195 +67,233 @@ static void my_platform_on_init_complete(void) {
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
 }
 
-static void my_platform_on_device_connected(uni_hid_device_t* d) {
-    logi("my_platform: device connected: %p\n", d);
+static void my_platform_on_device_connected(uni_hid_device_t *d)
+{
+    logi("PicoNtrol: device connected: %p\n", d);
+    if (d->report_parser.set_rumble != NULL)
+    {
+        d->report_parser.set_rumble(d, 0x80, 15);
+    }
 }
 
-static void my_platform_on_device_disconnected(uni_hid_device_t* d) {
-    logi("my_platform: device disconnected: %p\n", d);
+static void my_platform_on_device_disconnected(uni_hid_device_t *d)
+{
+    logi("PicoNtrol: device disconnected: %p\n", d);
 }
 
-static uni_error_t my_platform_on_device_ready(uni_hid_device_t* d) {
+static uni_error_t my_platform_on_device_ready(uni_hid_device_t *d)
+{
     logi("my_platform: device ready: %p\n", d);
 
     // You can reject the connection by returning an error.
     return UNI_ERROR_SUCCESS;
 }
 
-static void my_platform_on_controller_data(uni_hid_device_t* d, uni_controller_t* ctl) {
+static void my_platform_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
+{
     static uint8_t leds = 0;
     static uint8_t enabled = true;
     static uni_controller_t prev = {0};
-    uni_gamepad_t* gp;
+    uni_gamepad_t *gp;
 
-    if (memcmp(&prev, ctl, sizeof(*ctl)) == 0) {
+    if (memcmp(&prev, ctl, sizeof(*ctl)) == 0)
+    {
         return;
     }
     prev = *ctl;
-    // Print device Id before dumping gamepad.
-    logi("(%p) id=%d ", d, uni_hid_device_get_idx_for_instance(d));
-    uni_controller_dump(ctl);
+    // PRINT FULL DEBUG LOG
+    // logi("(%p) id=%d ", d, uni_hid_device_get_idx_for_instance(d));
+    // uni_controller_dump(ctl);
 
-    switch (ctl->klass) {
-        case UNI_CONTROLLER_CLASS_GAMEPAD:
-            gp = &ctl->gamepad;
+    switch (ctl->klass)
+    {
+    case UNI_CONTROLLER_CLASS_GAMEPAD:
+        gp = &ctl->gamepad;
 
-            if (gp->dpad == 0) {
+        if (gp->dpad == 0)
+        {
+            gpio_put(UP_BTN, true);
+            gpio_put(DOWN_BTN, true);
+            gpio_put(LEFT_BTN, true);
+            gpio_put(RIGHT_BTN, true);
+        }
+
+        int x = gp->axis_x;
+        int y = gp->axis_y;
+
+        // DEBUG: Print Left stick Axis
+        logi("Axis z: %d, Axis y: %d\n", x, y);
+
+        if (gp->dpad != 0 || x > 50 || y > 50 || x < -50 || y < -50)
+        {
+            if (gp->dpad == 5 || (x > 250 && y < -250))
+            {
+                gpio_put(RIGHT_BTN, false);
+                gpio_put(UP_BTN, false);
+                gpio_put(DOWN_BTN, true);
+                gpio_put(LEFT_BTN, true);
+
+                logi("Diagonal URX\n");
+            }
+
+            else if (gp->dpad == 9 || (x < -250 && y < -250))
+            {
+                gpio_put(RIGHT_BTN, true);
+                gpio_put(UP_BTN, false);
+                gpio_put(DOWN_BTN, true);
+                gpio_put(LEFT_BTN, false);
+
+                logi("Diagonal ULX\n");
+            }
+            else if (gp->dpad == 6 || (x > 250 && y > 250))
+            {
+                gpio_put(RIGHT_BTN, false);
                 gpio_put(UP_BTN, true);
+                gpio_put(DOWN_BTN, false);
+                gpio_put(LEFT_BTN, true);
+
+                logi("Diagonal DRX\n");
+            }
+
+            if (gp->dpad == 10 || (x < -250 && y > 250))
+            {
+                gpio_put(RIGHT_BTN, true);
+                gpio_put(UP_BTN, true);
+                gpio_put(DOWN_BTN, false);
+                gpio_put(LEFT_BTN, false);
+
+                logi("Diagonal DLX\n");
+            }
+            if (gp->dpad == 1 || y < -480)
+            {
+                gpio_put(UP_BTN, false);
                 gpio_put(DOWN_BTN, true);
                 gpio_put(LEFT_BTN, true);
                 gpio_put(RIGHT_BTN, true);
+
+                logi("UP\n");
             }
+            if (gp->dpad == 2 || y > 480)
+            {
+                gpio_put(DOWN_BTN, false);
+                gpio_put(UP_BTN, true);
+                gpio_put(LEFT_BTN, true);
+                gpio_put(RIGHT_BTN, true);
 
-            int x = gp->axis_x;
-            int y = gp->axis_y;
-            if (gp->dpad != 0 || x > 50 || y > 50 || x < -50 || y < -50) {
-                if (gp->dpad == 5 || (x > 350 && y < -250)) {
-                    gpio_put(RIGHT_BTN, false);
-                    gpio_put(UP_BTN, false);
-                    gpio_put(DOWN_BTN, true);
-                    gpio_put(LEFT_BTN, true);
-
-                    logi("Diagonal up right");
-                }
-
-                else if (gp->dpad == 9 || (x < -350 && y < -250)) {
-                    gpio_put(RIGHT_BTN, true);
-                    gpio_put(UP_BTN, false);
-                    gpio_put(DOWN_BTN, true);
-                    gpio_put(LEFT_BTN, false);
-
-                    logi("Diagonal up left");
-                } else if (gp->dpad == 6 || (x > 350 && y > 250)) {
-                    gpio_put(RIGHT_BTN, false);
-                    gpio_put(UP_BTN, true);
-                    gpio_put(DOWN_BTN, false);
-                    gpio_put(LEFT_BTN, true);
-
-                    logi("Diagonal down right");
-                }
-
-                else if (gp->dpad == 10 || (x < -350 && y > 250)) {
-                    gpio_put(RIGHT_BTN, true);
-                    gpio_put(UP_BTN, true);
-                    gpio_put(DOWN_BTN, false);
-                    gpio_put(LEFT_BTN, false);
-
-                    logi("Diagonal down left");
-                } else if (gp->dpad == 1 || y < -400) {
-                    gpio_put(UP_BTN, false);
-                    gpio_put(DOWN_BTN, true);
-                    gpio_put(LEFT_BTN, true);
-                    gpio_put(RIGHT_BTN, true);
-
-                    logi("UP_BTN y: %d\n", y);
-                } else if (gp->dpad == 2 || y > 400) {
-                    gpio_put(DOWN_BTN, false);
-                    gpio_put(UP_BTN, true);
-                    gpio_put(LEFT_BTN, true);
-                    gpio_put(RIGHT_BTN, true);
-
-                    logi("DOWN_BTN y: %d\n", y);
-                } else if (gp->dpad == 8 || x < (-400)) {
-                    gpio_put(LEFT_BTN, false);
-                    gpio_put(UP_BTN, true);
-                    gpio_put(DOWN_BTN, true);
-                    gpio_put(RIGHT_BTN, true);
-
-                    logi("Left x: %d\n", x);
-                } else if (gp->dpad == 4 || x > 490) {
-                    gpio_put(RIGHT_BTN, false);
-                    gpio_put(UP_BTN, true);
-                    gpio_put(DOWN_BTN, true);
-                    gpio_put(LEFT_BTN, true);
-
-                    logi("Right x: %d\n", x);
-                }
+                logi("DOWN\n");
             }
+            if (gp->dpad == 8 || x < (-480))
+            {
+                gpio_put(LEFT_BTN, false);
+                gpio_put(UP_BTN, true);
+                gpio_put(DOWN_BTN, true);
+                gpio_put(RIGHT_BTN, true);
 
-            if (gp->buttons != 1 && (gp->buttons != 128)) {
-                gpio_put(FIRE_BTN, true);
+                logi("LEFT\n");
             }
+            if (gp->dpad == 4 || x > 480)
+            {
+                gpio_put(RIGHT_BTN, false);
+                gpio_put(UP_BTN, true);
+                gpio_put(DOWN_BTN, true);
+                gpio_put(LEFT_BTN, true);
 
-            if ((gp->buttons == 128 && gp->throttle > 100) || gp->buttons == 1) {
-                gpio_put(FIRE_BTN, false);
+                logi("RIGHT\n");
             }
+        }
+        // IGNORE ALL BUTTONS EXCEPT RTrigger and LCRS <- (Lower Cross - X PS, B NIN, A XBX)
+        if (gp->buttons != 1 && (gp->buttons != 128))
+        {
+            gpio_put(FIRE_BTN, true);
+        }
 
-            // Debugging
-            // Axis ry: control rumble
-            /* if ((gp->buttons & BUTTON_A) && d->report_parser.set_rumble != NULL) {
-                d->report_parser.set_rumble(d, 128, 128);
-            }
-            // Buttons: Control LEDs On/Off
-            if ((gp->buttons & BUTTON_B) && d->report_parser.set_player_leds != NULL) {
-                d->report_parser.set_player_leds(d, leds++ & 0x0f);
-            }
-            // Axis: control RGB color
-            if ((gp->buttons & BUTTON_X) && d->report_parser.set_lightbar_color != NULL) {
-                uint8_t r = (gp->axis_x * 256) / 512;
-                uint8_t g = (gp->axis_y * 256) / 512;
-                uint8_t b = (gp->axis_rx * 256) / 512;
-                d->report_parser.set_lightbar_color(d, r, g, b);
-            } */
+        if ((gp->buttons == 128 && gp->throttle > 100) || gp->buttons == 1)
+        {
+            gpio_put(FIRE_BTN, false);
+            logi("FIRE\n");
+        }
 
-            // Toggle Bluetooth connections
-            /* if ((gp->buttons & BUTTON_SHOULDER_L) && enabled) {
-                logi("*** Disabling Bluetooth connections\n");
-                uni_bt_enable_new_connections_safe(false);
-                enabled = false;
-            }
-            if ((gp->buttons & BUTTON_SHOULDER_R) && !enabled) {
-                logi("*** Enabling Bluetooth connections\n");
-                uni_bt_enable_new_connections_safe(true);
-                enabled = true;
-            } */
-            break;
-        default:
-            loge("Unsupported controller class: %d\n", ctl->klass);
-            break;
+        // Debugging
+        // Axis ry: control rumble
+        /* if ((gp->buttons & BUTTON_A) && d->report_parser.set_rumble != NULL) {
+            d->report_parser.set_rumble(d, 128, 128);
+        }
+        // Buttons: Control LEDs On/Off
+        if ((gp->buttons & BUTTON_B) && d->report_parser.set_player_leds != NULL) {
+            d->report_parser.set_player_leds(d, leds++ & 0x0f);
+        }
+        // Axis: control RGB color
+        if ((gp->buttons & BUTTON_X) && d->report_parser.set_lightbar_color != NULL) {
+            uint8_t r = (gp->axis_x * 256) / 512;
+            uint8_t g = (gp->axis_y * 256) / 512;
+            uint8_t b = (gp->axis_rx * 256) / 512;
+            d->report_parser.set_lightbar_color(d, r, g, b);
+        } */
+
+        // Toggle Bluetooth connections
+        /* if ((gp->buttons & BUTTON_SHOULDER_L) && enabled) {
+            logi("*** Disabling Bluetooth connections\n");
+            uni_bt_enable_new_connections_safe(false);
+            enabled = false;
+        }
+        if ((gp->buttons & BUTTON_SHOULDER_R) && !enabled) {
+            logi("*** Enabling Bluetooth connections\n");
+            uni_bt_enable_new_connections_safe(true);
+            enabled = true;
+        } */
+        break;
+    default:
+        loge("Unsupported controller class: %d\n", ctl->klass);
+        break;
     }
 }
 
-static const uni_property_t* my_platform_get_property(uni_property_idx_t idx) {
+static const uni_property_t *my_platform_get_property(uni_property_idx_t idx)
+{
     // Deprecated
     ARG_UNUSED(idx);
     return NULL;
 }
 
-static void my_platform_on_oob_event(uni_platform_oob_event_t event, void* data) {
-    switch (event) {
-        case UNI_PLATFORM_OOB_GAMEPAD_SYSTEM_BUTTON:
-            // Optional: do something when "system" button gets pressed.
-            trigger_event_on_gamepad((uni_hid_device_t*)data);
-            break;
+static void my_platform_on_oob_event(uni_platform_oob_event_t event, void *data)
+{
+    switch (event)
+    {
+    case UNI_PLATFORM_OOB_GAMEPAD_SYSTEM_BUTTON:
+        // Optional: do something when "system" button gets pressed.
+        trigger_event_on_gamepad((uni_hid_device_t *)data);
+        break;
 
-        case UNI_PLATFORM_OOB_BLUETOOTH_ENABLED:
-            // When the "bt scanning" is on / off. Could by triggered by different events
-            // Useful to notify the user
-            logi("my_platform_on_oob_event: Bluetooth enabled: %d\n", (bool)(data));
-            break;
+    case UNI_PLATFORM_OOB_BLUETOOTH_ENABLED:
+        // When the "bt scanning" is on / off. Could by triggered by different events
+        // Useful to notify the user
+        logi("my_platform_on_oob_event: Bluetooth enabled: %d\n", (bool)(data));
+        break;
 
-        default:
-            logi("my_platform_on_oob_event: unsupported event: 0x%04x\n", event);
+    default:
+        logi("my_platform_on_oob_event: unsupported event: 0x%04x\n", event);
     }
 }
 
 //
 // Helpers
 //
-static void trigger_event_on_gamepad(uni_hid_device_t* d) {
-    if (d->report_parser.set_rumble != NULL) {
-        d->report_parser.set_rumble(d, 0x80 /* value */, 15 /* duration */);
-    }
+static void trigger_event_on_gamepad(uni_hid_device_t *d)
+{
+    // if (d->report_parser.set_rumble != NULL) {
+    // d->report_parser.set_rumble(d, 0x80 /* value */, 15 /* duration */);
+    //}
 
-    if (d->report_parser.set_player_leds != NULL) {
+    if (d->report_parser.set_player_leds != NULL)
+    {
         static uint8_t led = 0;
         led += 1;
         led &= 0xf;
         d->report_parser.set_player_leds(d, led);
     }
 
-    if (d->report_parser.set_lightbar_color != NULL) {
+    if (d->report_parser.set_lightbar_color != NULL)
+    {
         static uint8_t red = 0x10;
         static uint8_t green = 0x20;
         static uint8_t blue = 0x40;
@@ -268,7 +308,8 @@ static void trigger_event_on_gamepad(uni_hid_device_t* d) {
 //
 // Entry Point
 //
-struct uni_platform* get_my_platform(void) {
+struct uni_platform *get_my_platform(void)
+{
     static struct uni_platform plat = {
         .name = "My Platform",
         .init = my_platform_init,
