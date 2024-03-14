@@ -27,7 +27,7 @@ pico_sdk_init()
 
 add_executable(picontrol
     src/main.c
-    src/my_platform.c
+    src/picontrol.c
 )
 
 target_include_directories(picontrol PRIVATE

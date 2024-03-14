@@ -10,8 +10,8 @@
 #error "Pico W must use BLUEPAD32_PLATFORM_CUSTOM"
 #endif
 
-// Defined in my_platform.c
-struct uni_platform* get_my_platform(void);
+// Defined in picontrol.c
+struct uni_platform* get_picontrol(void);
 
 int main() {
     stdio_init_all();
@@ -26,7 +26,7 @@ int main() {
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
 
     // Must be called before uni_init()
-    uni_platform_set_custom(get_my_platform());
+    uni_platform_set_custom(get_picontrol());
 
     // Initialize BP32
     uni_init(0, NULL);
