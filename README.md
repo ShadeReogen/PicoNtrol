@@ -63,6 +63,9 @@ If you used the recommended cable, the Pico W should boot up as soon as you turn
 |Switch Pro|:soon:|:x:|
 |DualShock 4|:white_check_mark:|:x:|
 
+> **Note**: After Pairing the DualShock 4, it usually doesn't need to be paired again, unless paired with another device.
+
+
 
 ### Mega Drive 9 Pin Cable AE
 I'll leave the AliExpress cable layout here, mostly for myself so I don't need to remember it:
