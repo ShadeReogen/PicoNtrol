@@ -16,7 +16,7 @@ To create a PicoNtrol adapter you'll need the following:
 - Raspberry Pi Pico W
 - A controller cable for your console (either aftermarket or scrapped from a controller)
 - Soldering equipment
-- The `picontrol-<console>.uf2` file to flash onto the Pico W
+- The `picontrol-<console>.uf2` file to flash onto the Pico W. You can find it in the `Releases` tab.
 ##  Pinout and Soldering
 If you're using a different or aftermarket cable, make sure you connect the correct wireto the correct pin.
 I have used [this 9 Pin Mega Drive cable from AliExpress](https://it.aliexpress.com/item/1005006642758218.html?spm=a2g0o.productlist.main.23.3e9bEGleEGle14&algo_pvid=dfa1677c-e244-4ff3-a169-98364c37e02d&utparam-url=scene:search%7Cquery_from:&gatewayAdapt=glo2ita). If you use the same, make sure to check the mapping at the bottom of this post. This cable is ***recommended*** as it has a 5V wire.
