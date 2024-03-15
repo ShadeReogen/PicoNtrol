@@ -33,7 +33,7 @@ For now, we've reprogrammed the pico to support following actions:
 > **Note**: You can use any **GND** pin on the Pico W.
 
 Keep in mind that, as far as I know, the official CX40 cable does not have a +5V wire. In this case you must power the Pico with a 5V battery or USB, just re-route the GND accordingly.
-![PicoNtrol2600 Layout](https://i.imgur.com/VmpadPB.png)
+![PicoNtrol2600 Layout](https://i.imgur.com/44lCnsa.png)
 The colors in this image match the ones of an official, original Atari CX40 Joystick and the extra +5V wire.
 
 In case of need, here is the CX40 pinout. The controller cable plug is picture bottom left. 
