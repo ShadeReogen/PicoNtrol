@@ -43,7 +43,7 @@ In case of need, here is the CX40 pinout. The controller cable plug is picture b
 [Source](https://jamhamster.wordpress.com/2021/07/17/atari-kempston-joystick-pinout-diagram/)
 
 ## Installation
-Download the `picontrol-<console>.uf2` file from the release tab.
+Download the `picontrol-<console>.uf2` file from the [`Release`](https://github.com/ShadeReogen/PicoNtrol/releases/tag/v0.2-alpha) tab.
 Plug your Pico W into your PC while holding down the BOOTSEL button, and drag the file on the root of the Pico W's storage. Once done the Pico W should disconnect from the PC.
 You can now unplug your Pico W.
 
@@ -65,7 +65,7 @@ If you used the recommended cable, the Pico W should boot up as soon as you turn
 |Switch Pro|:soon:|:x:|
 |DualShock 4|:white_check_mark:|:x:|
 
-> **Note**: After Pairing the DualShock 4, it usually doesn't need to be paired again, unless paired with another device.
+> **Note**: After Pairing the DualShock 4, it usually doesn't need to be paired again, unless it has been paired with another device in the meantime.
 
 
 
