@@ -20,9 +20,13 @@
 #define LEFT_BTN 2
 #define RIGHT_BTN 3
 #define FIRE_BTN 4
+#define CONSOLE 5
+
+int TARGET_CONSOLE = 0;
 
 // Declarations
-static void trigger_event_on_gamepad(uni_hid_device_t *d);
+static void update_gamepad(uni_hid_device_t *d);
+static void next_console();
 
 //
 // Platform Overrides
@@ -57,7 +61,9 @@ static void picontrol_on_init_complete(void)
     gpio_init(LEFT_BTN);
     gpio_init(RIGHT_BTN);
     gpio_init(FIRE_BTN);
+    gpio_init(TARGET_CONSOLE);
 
+    gpio_set_dir(TARGET_CONSOLE, GPIO_IN);
     gpio_set_dir(UP_BTN, GPIO_OUT);
     gpio_set_dir(DOWN_BTN, GPIO_OUT);
     gpio_set_dir(LEFT_BTN, GPIO_OUT);
@@ -89,7 +95,7 @@ static uni_error_t picontrol_on_device_ready(uni_hid_device_t *d)
     return UNI_ERROR_SUCCESS;
 }
 
-static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
+static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
 {
     static uint8_t leds = 0;
     static uint8_t enabled = true;
@@ -184,7 +190,6 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
             }
 
             // Set GPIOs based on direction
-            // gpio_put(UP_BTN, up);
             gpio_put(DOWN_BTN, down);
             gpio_put(LEFT_BTN, left);
             gpio_put(RIGHT_BTN, right);
@@ -217,6 +222,35 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
     }
 }
 
+static void nes(uni_hid_device_t *d, uni_controller_t *ctl)
+{
+    // Placeholder for CONSOLE = 1 (nes)
+}
+
+static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
+{
+    /*  uni_gamepad_t *gp;
+     gp = &ctl->gamepad;
+
+     // Next Target Console if L is pressed while PUSH down
+     if (gp->buttons == 16 && gpio_get(CONSOLE))
+     {
+         ++TARGET_CONSOLE;
+         logi("Setting TARGET_CONSOLE to: %d\n", TARGET_CONSOLE);
+         return;
+     } */
+
+    // Dispatch to appropriate handler based on Target Console
+    if (TARGET_CONSOLE == 0)
+    {
+        atari2600(d, ctl);
+    }
+    else
+    {
+        nes(d, ctl);
+    }
+}
+
 static const uni_property_t *picontrol_get_property(uni_property_idx_t idx)
 {
     // Deprecated
@@ -229,8 +263,10 @@ static void picontrol_on_oob_event(uni_platform_oob_event_t event, void *data)
     switch (event)
     {
     case UNI_PLATFORM_OOB_GAMEPAD_SYSTEM_BUTTON:
-        // Optional: do something when "system" button gets pressed.
-        trigger_event_on_gamepad((uni_hid_device_t *)data);
+        // CHANGE CONSOLE ON SYSTEM BUTTON PRESS
+        update_gamepad((uni_hid_device_t *)data);
+        next_console();
+        logi("Updated Console to: %d", TARGET_CONSOLE);
         break;
 
     case UNI_PLATFORM_OOB_BLUETOOTH_ENABLED:
@@ -247,11 +283,12 @@ static void picontrol_on_oob_event(uni_platform_oob_event_t event, void *data)
 //
 // Helpers
 //
-static void trigger_event_on_gamepad(uni_hid_device_t *d)
+static void update_gamepad(uni_hid_device_t *d)
 {
-    // if (d->report_parser.set_rumble != NULL) {
-    // d->report_parser.set_rumble(d, 0x80 /* value */, 15 /* duration */);
-    //}
+    if (d->report_parser.set_rumble != NULL)
+    {
+        d->report_parser.set_rumble(d, 0x80 /* value */, 15 /* duration */);
+    }
 
     if (d->report_parser.set_player_leds != NULL)
     {
@@ -272,6 +309,11 @@ static void trigger_event_on_gamepad(uni_hid_device_t *d)
         blue += 0x40;
         d->report_parser.set_lightbar_color(d, red, green, blue);
     }
+}
+
+static void next_console()
+{
+    ++TARGET_CONSOLE;
 }
 
 //
