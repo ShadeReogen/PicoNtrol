@@ -102,107 +102,96 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
     }
     prev = *ctl;
     // PRINT FULL DEBUG LOG
-    // logi("(%p) id=%d ", d, uni_hid_device_get_idx_for_instance(d));
-    // uni_controller_dump(ctl);
+    logi("(%p) id=%d ", d, uni_hid_device_get_idx_for_instance(d));
+    uni_controller_dump(ctl);
 
     switch (ctl->klass)
     {
     case UNI_CONTROLLER_CLASS_GAMEPAD:
+    {
         gp = &ctl->gamepad;
+        bool up = true, down = true, left = true, right = true;
 
         if (gp->dpad == 0)
         {
-            gpio_put(UP_BTN, true);
-            gpio_put(DOWN_BTN, true);
-            gpio_put(LEFT_BTN, true);
-            gpio_put(RIGHT_BTN, true);
+            gpio_put(UP_BTN, up);
+            gpio_put(DOWN_BTN, down);
+            gpio_put(LEFT_BTN, left);
+            gpio_put(RIGHT_BTN, right);
         }
 
         int x = gp->axis_x;
         int y = gp->axis_y;
 
-        // DEBUG: Print Left stick Axis
-        //logi("Axis z: %d, Axis y: %d\n", x, y);
-
-        if (gp->dpad != 0 || x > 50 || y > 50 || x < -50 || y < -50)
+        // Check D-pad and stick positions
+        if (gp->dpad != 0 || abs(x) > 50 || abs(y) > 50)
         {
             if (gp->dpad == 5 || (x > 250 && y < -250))
             {
-                gpio_put(RIGHT_BTN, false);
-                gpio_put(UP_BTN, false);
-                gpio_put(DOWN_BTN, true);
-                gpio_put(LEFT_BTN, true);
-
+                right = false;
+                up = false;
                 logi("Diagonal URX\n");
             }
-
             else if (gp->dpad == 9 || (x < -250 && y < -250))
             {
-                gpio_put(RIGHT_BTN, true);
-                gpio_put(UP_BTN, false);
-                gpio_put(DOWN_BTN, true);
-                gpio_put(LEFT_BTN, false);
-
+                left = false;
+                up = false;
                 logi("Diagonal ULX\n");
             }
             else if (gp->dpad == 6 || (x > 250 && y > 250))
             {
-                gpio_put(RIGHT_BTN, false);
-                gpio_put(UP_BTN, true);
-                gpio_put(DOWN_BTN, false);
-                gpio_put(LEFT_BTN, true);
-
+                right = false;
+                down = false;
                 logi("Diagonal DRX\n");
             }
-
-            if (gp->dpad == 10 || (x < -250 && y > 250))
+            else if (gp->dpad == 10 || (x < -250 && y > 250))
             {
-                gpio_put(RIGHT_BTN, true);
-                gpio_put(UP_BTN, true);
-                gpio_put(DOWN_BTN, false);
-                gpio_put(LEFT_BTN, false);
-
+                left = false;
+                down = false;
                 logi("Diagonal DLX\n");
             }
-            if (gp->dpad == 1 || y < -480)
+            else if (gp->dpad == 1 || y < -480)
             {
-                gpio_put(UP_BTN, false);
-                gpio_put(DOWN_BTN, true);
-                gpio_put(LEFT_BTN, true);
-                gpio_put(RIGHT_BTN, true);
-
+                up = false;
+                down = true;
+                left = true;
+                right = true;
                 logi("UP\n");
             }
-            if (gp->dpad == 2 || y > 480)
+            else if (gp->dpad == 2 || y > 480)
             {
-                gpio_put(DOWN_BTN, false);
-                gpio_put(UP_BTN, true);
-                gpio_put(LEFT_BTN, true);
-                gpio_put(RIGHT_BTN, true);
-
+                down = false;
+                up = true;
+                left = true;
+                right = true;
                 logi("DOWN\n");
             }
-            if (gp->dpad == 8 || x < (-480))
+            else if (gp->dpad == 8 || x < (-480))
             {
-                gpio_put(LEFT_BTN, false);
-                gpio_put(UP_BTN, true);
-                gpio_put(DOWN_BTN, true);
-                gpio_put(RIGHT_BTN, true);
-
+                left = false;
+                up = true;
+                down = true;
+                right = true;
                 logi("LEFT\n");
             }
-            if (gp->dpad == 4 || x > 480)
+            else if (gp->dpad == 4 || x > 480)
             {
-                gpio_put(RIGHT_BTN, false);
-                gpio_put(UP_BTN, true);
-                gpio_put(DOWN_BTN, true);
-                gpio_put(LEFT_BTN, true);
-
+                right = false;
+                up = true;
+                down = true;
+                left = true;
                 logi("RIGHT\n");
             }
+
+            // Set GPIOs based on direction
+            gpio_put(UP_BTN, up);
+            gpio_put(DOWN_BTN, down);
+            gpio_put(LEFT_BTN, left);
+            gpio_put(RIGHT_BTN, right);
         }
-        // IGNORE ALL BUTTONS EXCEPT RTrigger and LCRS <- (Lower Cross - X PS, B NIN, A XBX)
-        if (gp->buttons != 1 && (gp->buttons != 128))
+
+        // Handle button presses
+        if (gp->buttons != 1 && gp->buttons != 128)
         {
             gpio_put(FIRE_BTN, true);
         }
@@ -212,36 +201,8 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
             gpio_put(FIRE_BTN, false);
             logi("FIRE\n");
         }
-
-        // Debugging
-        // Axis ry: control rumble
-        /* if ((gp->buttons & BUTTON_A) && d->report_parser.set_rumble != NULL) {
-            d->report_parser.set_rumble(d, 128, 128);
-        }
-        // Buttons: Control LEDs On/Off
-        if ((gp->buttons & BUTTON_B) && d->report_parser.set_player_leds != NULL) {
-            d->report_parser.set_player_leds(d, leds++ & 0x0f);
-        }
-        // Axis: control RGB color
-        if ((gp->buttons & BUTTON_X) && d->report_parser.set_lightbar_color != NULL) {
-            uint8_t r = (gp->axis_x * 256) / 512;
-            uint8_t g = (gp->axis_y * 256) / 512;
-            uint8_t b = (gp->axis_rx * 256) / 512;
-            d->report_parser.set_lightbar_color(d, r, g, b);
-        } */
-
-        // Toggle Bluetooth connections
-        /* if ((gp->buttons & BUTTON_SHOULDER_L) && enabled) {
-            logi("*** Disabling Bluetooth connections\n");
-            uni_bt_enable_new_connections_safe(false);
-            enabled = false;
-        }
-        if ((gp->buttons & BUTTON_SHOULDER_R) && !enabled) {
-            logi("*** Enabling Bluetooth connections\n");
-            uni_bt_enable_new_connections_safe(true);
-            enabled = true;
-        } */
-        break;
+    }
+    break;
     default:
         loge("Unsupported controller class: %d\n", ctl->klass);
         break;
