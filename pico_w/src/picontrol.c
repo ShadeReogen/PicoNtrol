@@ -184,16 +184,23 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
             }
 
             // Set GPIOs based on direction
-            gpio_put(UP_BTN, up);
+            // gpio_put(UP_BTN, up);
             gpio_put(DOWN_BTN, down);
             gpio_put(LEFT_BTN, left);
             gpio_put(RIGHT_BTN, right);
         }
 
         // Handle button presses
-        if (gp->buttons != 1 && gp->buttons != 128)
+        if (gp->buttons == 0)
         {
             gpio_put(FIRE_BTN, true);
+            up = true;
+        }
+
+        if (gp->buttons == 2)
+        {
+            up = false;
+            logi("UP\n");
         }
 
         if ((gp->buttons == 128 && gp->throttle > 100) || gp->buttons == 1)
@@ -201,6 +208,7 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
             gpio_put(FIRE_BTN, false);
             logi("FIRE\n");
         }
+        gpio_put(UP_BTN, up);
     }
     break;
     default:
