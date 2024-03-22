@@ -4,6 +4,7 @@
 
 #include <pico/cyw43_arch.h>
 #include <uni.h>
+#include "math.h"
 
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
@@ -15,18 +16,19 @@
 #error "Pico W must use BLUEPAD32_PLATFORM_CUSTOM"
 #endif
 
+// Joystick Analog dead zone
+#define DEAD_ZONE 150
+
 #define UP_BTN 0
 #define DOWN_BTN 1
 #define LEFT_BTN 2
 #define RIGHT_BTN 3
 #define FIRE_BTN 4
-#define CONSOLE 5
-
-int TARGET_CONSOLE = 0;
+#define INPUT_A 5 // Paddle A /Touch Tablet < ---   No idea how tf these work. Can't test them
+#define INPUT_B 6 // Paddle B /Touch Tablet < ---   I just know that the extra inputs are mapped to this.
 
 // Declarations
 static void update_gamepad(uni_hid_device_t *d);
-static void next_console();
 
 //
 // Platform Overrides
@@ -61,9 +63,19 @@ static void picontrol_on_init_complete(void)
     gpio_init(LEFT_BTN);
     gpio_init(RIGHT_BTN);
     gpio_init(FIRE_BTN);
-    gpio_init(TARGET_CONSOLE);
 
-    gpio_set_dir(TARGET_CONSOLE, GPIO_IN);
+    /*
+    TODO:
+    Inactivce as I have no clue how to implement these.
+    What do they do? --> Need Paddle /Tablet
+
+    gpio_init(INPUT_A);
+    gpio_init(INPUT_B);
+    gpio_set_dir(INPUT_A, GPIO_OUT);
+    gpio_set_dir(INPUT_B, GPIO_OUT);
+
+    */
+
     gpio_set_dir(UP_BTN, GPIO_OUT);
     gpio_set_dir(DOWN_BTN, GPIO_OUT);
     gpio_set_dir(LEFT_BTN, GPIO_OUT);
@@ -95,7 +107,7 @@ static uni_error_t picontrol_on_device_ready(uni_hid_device_t *d)
     return UNI_ERROR_SUCCESS;
 }
 
-static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
+static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
 {
     static uint8_t leds = 0;
     static uint8_t enabled = true;
@@ -108,8 +120,8 @@ static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
     }
     prev = *ctl;
     // PRINT FULL DEBUG LOG
-    logi("(%p) id=%d ", d, uni_hid_device_get_idx_for_instance(d));
-    uni_controller_dump(ctl);
+    /* logi("(%p) id=%d ", d, uni_hid_device_get_idx_for_instance(d));
+    uni_controller_dump(ctl); */
 
     switch (ctl->klass)
     {
@@ -129,34 +141,44 @@ static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
         int x = gp->axis_x;
         int y = gp->axis_y;
 
-        // Check D-pad and stick positions
-        if (gp->dpad != 0 || abs(x) > 50 || abs(y) > 50)
+        /*
+         * I set the Dpad to have a higher priority than the analog stick
+         *
+         * Why?
+         * It is improbable that a user wants to input direction with both at the same time, so
+         * since accidental stick movement is more likely to happen compared to accidental dpad
+         * presses, the dpad input is prioritized.
+         * Feel free to change this and recompile or open an issue to discuss this.
+         *
+         * NdP: This if-else-hell approach is chosen mindfully, to reduce input lag.
+         */
+        if (gp->dpad != 0)
         {
-            if (gp->dpad == 5 || (x > 250 && y < -250))
+            if (gp->dpad == 5)
             {
                 right = false;
                 up = false;
                 logi("Diagonal URX\n");
             }
-            else if (gp->dpad == 9 || (x < -250 && y < -250))
+            else if (gp->dpad == 9)
             {
                 left = false;
                 up = false;
                 logi("Diagonal ULX\n");
             }
-            else if (gp->dpad == 6 || (x > 250 && y > 250))
+            else if (gp->dpad == 6)
             {
                 right = false;
                 down = false;
                 logi("Diagonal DRX\n");
             }
-            else if (gp->dpad == 10 || (x < -250 && y > 250))
+            else if (gp->dpad == 10)
             {
                 left = false;
                 down = false;
                 logi("Diagonal DLX\n");
             }
-            else if (gp->dpad == 1 || y < -480)
+            else if (gp->dpad == 1)
             {
                 up = false;
                 down = true;
@@ -164,7 +186,7 @@ static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
                 right = true;
                 logi("UP\n");
             }
-            else if (gp->dpad == 2 || y > 480)
+            else if (gp->dpad == 2)
             {
                 down = false;
                 up = true;
@@ -172,7 +194,7 @@ static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
                 right = true;
                 logi("DOWN\n");
             }
-            else if (gp->dpad == 8 || x < (-480))
+            else if (gp->dpad == 8)
             {
                 left = false;
                 up = true;
@@ -180,7 +202,7 @@ static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
                 right = true;
                 logi("LEFT\n");
             }
-            else if (gp->dpad == 4 || x > 480)
+            else if (gp->dpad == 4)
             {
                 right = false;
                 up = true;
@@ -188,18 +210,83 @@ static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
                 left = true;
                 logi("RIGHT\n");
             }
+        }
 
-            // Set GPIOs based on direction
-            gpio_put(DOWN_BTN, down);
-            gpio_put(LEFT_BTN, left);
-            gpio_put(RIGHT_BTN, right);
+        else if (!(fabs(x) < DEAD_ZONE && fabs(y) < DEAD_ZONE))
+        {
+            /*
+             * Cool nerdy math function to nail every analog position correctly 😎
+             */
+            double angle = atan2(y, x) * (180.0 / M_PI);
+
+            // Adjust angle to be positive
+            if (angle < 0)
+            {
+                angle += 360.0;
+            }
+
+            if (angle >= 22.5 && angle < 67.5)
+            {
+                right = false;
+                down = false;
+                logi("Down-Right\n");
+            }
+            else if (angle >= 67.5 && angle < 112.5)
+            {
+                down = false;
+                up = true;
+                left = true;
+                right = true;
+                logi("Down\n");
+            }
+            else if (angle >= 112.5 && angle < 157.5)
+            {
+                left = false;
+                down = false;
+                logi("Down-Left\n");
+            }
+            else if (angle >= 157.5 && angle < 202.5)
+            {
+                left = false;
+                up = true;
+                down = true;
+                right = true;
+                logi("Left\n");
+            }
+            else if (angle >= 202.5 && angle < 247.5)
+            {
+                left = false;
+                up = false;
+                logi("Up-Left\n");
+            }
+            else if (angle >= 247.5 && angle < 292.5)
+            {
+                up = false;
+                down = true;
+                left = true;
+                right = true;
+                logi("Up\n");
+            }
+            else if (angle >= 292.5 && angle < 337.5)
+            {
+                right = false;
+                up = false;
+                logi("Up-Right\n");
+            }
+            else
+            {
+                right = false;
+                up = true;
+                down = true;
+                left = true;
+                logi("Right\n");
+            }
         }
 
         // Handle button presses
         if (gp->buttons == 0)
         {
             gpio_put(FIRE_BTN, true);
-            up = true;
         }
 
         if (gp->buttons == 2)
@@ -213,41 +300,17 @@ static void atari2600(uni_hid_device_t *d, uni_controller_t *ctl)
             gpio_put(FIRE_BTN, false);
             logi("FIRE\n");
         }
+
+        // Set GPIOs based on direction
         gpio_put(UP_BTN, up);
+        gpio_put(DOWN_BTN, down);
+        gpio_put(LEFT_BTN, left);
+        gpio_put(RIGHT_BTN, right);
     }
     break;
     default:
         loge("Unsupported controller class: %d\n", ctl->klass);
         break;
-    }
-}
-
-static void nes(uni_hid_device_t *d, uni_controller_t *ctl)
-{
-    // Placeholder for CONSOLE = 1 (nes)
-}
-
-static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
-{
-    /*  uni_gamepad_t *gp;
-     gp = &ctl->gamepad;
-
-     // Next Target Console if L is pressed while PUSH down
-     if (gp->buttons == 16 && gpio_get(CONSOLE))
-     {
-         ++TARGET_CONSOLE;
-         logi("Setting TARGET_CONSOLE to: %d\n", TARGET_CONSOLE);
-         return;
-     } */
-
-    // Dispatch to appropriate handler based on Target Console
-    if (TARGET_CONSOLE == 0)
-    {
-        atari2600(d, ctl);
-    }
-    else
-    {
-        nes(d, ctl);
     }
 }
 
@@ -265,8 +328,6 @@ static void picontrol_on_oob_event(uni_platform_oob_event_t event, void *data)
     case UNI_PLATFORM_OOB_GAMEPAD_SYSTEM_BUTTON:
         // CHANGE CONSOLE ON SYSTEM BUTTON PRESS
         update_gamepad((uni_hid_device_t *)data);
-        next_console();
-        logi("Updated Console to: %d", TARGET_CONSOLE);
         break;
 
     case UNI_PLATFORM_OOB_BLUETOOTH_ENABLED:
@@ -287,7 +348,7 @@ static void update_gamepad(uni_hid_device_t *d)
 {
     if (d->report_parser.set_rumble != NULL)
     {
-        d->report_parser.set_rumble(d, 0x80 /* value */, 15 /* duration */);
+        d->report_parser.set_rumble(d, 0xF0 /* value */, 15 /* duration */);
     }
 
     if (d->report_parser.set_player_leds != NULL)
@@ -309,11 +370,6 @@ static void update_gamepad(uni_hid_device_t *d)
         blue += 0x40;
         d->report_parser.set_lightbar_color(d, red, green, blue);
     }
-}
-
-static void next_console()
-{
-    ++TARGET_CONSOLE;
 }
 
 //
