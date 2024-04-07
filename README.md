@@ -16,7 +16,7 @@ To create a PicoNtrol adapter you'll need the following:
 - Raspberry Pi Pico W
 - A controller cable for your console (either aftermarket or scrapped from a controller)
 - Soldering equipment
-- The `picontrol-<console>.uf2` file to flash onto the Pico W. You can find it in the `Releases` tab.
+- The `picontrol-<console>.uf2` file to flash onto the Pico W. You can find it in the [`Releases`](https://github.com/ShadeReogen/PicoNtrol/releases/tag/v0.2-alpha) tab.
 ##  Pinout and Soldering
 If you're using a different or aftermarket cable, make sure you connect the correct wireto the correct pin.
 I have used [this 9 Pin Mega Drive cable from AliExpress](https://it.aliexpress.com/item/1005006642758218.html?spm=a2g0o.productlist.main.23.3e9bEGleEGle14&algo_pvid=dfa1677c-e244-4ff3-a169-98364c37e02d&utparam-url=scene:search%7Cquery_from:&gatewayAdapt=glo2ita). If you use the same, make sure to check the mapping at the bottom of this post. This cable is ***recommended*** as it has a 5V wire.
@@ -45,7 +45,7 @@ In case of need, here is the CX40 pinout. The controller cable plug is picture b
 [Source](https://jamhamster.wordpress.com/2021/07/17/atari-kempston-joystick-pinout-diagram/)
 
 ## Installation
-Download the `picontrol-<console>.uf2` file from the [`Release`](https://github.com/ShadeReogen/PicoNtrol/releases/tag/v0.2-alpha) tab.
+Download the `picontrol-<console>.uf2` file from the [`Releases`](https://github.com/ShadeReogen/PicoNtrol/releases/tag/v0.2-alpha) tab.
 Plug your Pico W into your PC while holding down the BOOTSEL button, and drag the file on the root of the Pico W's storage. Once done the Pico W should disconnect from the PC.
 You can now unplug your Pico W.
 
