@@ -32,7 +32,7 @@ For now, we've reprogrammed the pico to support following actions:
 |~~40~~ | ~~+5V~~| ~~RED~~|
 > **Note**: You can use any **GND** pin on the Pico W.
 
-Keep in mind that the official CX40 cable does not have a +5V wire. In this case you must power the Pico with a 5V battery or USB, just re-route the GND accordingly **(DIODE MANDATORY IN THIS CASE)**.
+Keep in mind that the official CX40 cable does not have a +5V wire. In this case you must power the Pico with a 5V battery, just re-route the GND accordingly **(DIODE MANDATORY IN THIS CASE)**.
 > **Note**: The use of a diode is still recommended to avoid accidental power backfeeding to the console the Pico's USB. If you omit it, make sure the USB is **ALWAYS** disconnected before plugging the Pico into the console.
 
 
