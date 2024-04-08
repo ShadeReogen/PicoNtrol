@@ -41,8 +41,7 @@ Keep in mind that the official CX40 cable does not have a +5V wire. In this case
 The colors in this image match the ones of an official, original Atari CX40 Joystick and the extra +5V wire.
 
 In case of need, here is the CX40 pinout. The controller cable plug is picture bottom left. 
-![Atari CX40 Pinout](https://jamhamster.files.wordpress.com/2021/07/atari-joysticks-pinout.jpg?w=1024)
-[Source](https://jamhamster.wordpress.com/2021/07/17/atari-kempston-joystick-pinout-diagram/)
+![Atari CX40 Pinout](Images/Controller_Jack_Pinout.png)
 
 ## Installation
 Download the `picontrol-<console>.uf2` file from the [`Releases`](https://github.com/ShadeReogen/PicoNtrol/releases/tag/v0.2-alpha) tab.
