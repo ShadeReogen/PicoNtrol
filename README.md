@@ -18,7 +18,7 @@ To create a PicoNtrol adapter you'll need the following:
 - Soldering equipment
 - The `picontrol-<console>.uf2` file to flash onto the Pico W. You can find it in the [`Releases`](https://github.com/ShadeReogen/PicoNtrol/releases/tag/v0.2-alpha) tab.
 ##  Pinout and Soldering
-If you're using a different or aftermarket cable, make sure you connect the correct wireto the correct pin.
+If you're using a different or aftermarket cable, make sure you connect the correct wire to the correct pin.
 I have used [this 9 Pin Mega Drive cable from AliExpress](https://it.aliexpress.com/item/1005006642758218.html?spm=a2g0o.productlist.main.23.3e9bEGleEGle14&algo_pvid=dfa1677c-e244-4ff3-a169-98364c37e02d&utparam-url=scene:search%7Cquery_from:&gatewayAdapt=glo2ita). If you use the same, make sure to check the mapping at the bottom of this post. This cable is ***recommended*** as it has a 5V wire.
 For now, we've reprogrammed the pico to support following actions:
 |PICO PIN|ACTION|CX40 COLOR|
@@ -33,14 +33,14 @@ For now, we've reprogrammed the pico to support following actions:
 > **Note**: You can use any **GND** pin on the Pico W.
 
 Keep in mind that the official CX40 cable does not have a +5V wire. In this case you must power the Pico with a 5V battery, just re-route the GND accordingly **(DIODE MANDATORY IN THIS CASE)**.
-> **Note**: The use of a diode is still recommended to avoid accidental power backfeeding to the console the Pico's USB. If you omit it, make sure the USB is **ALWAYS** disconnected before plugging the Pico into the console.
+> **Note**: The use of a diode is still recommended to avoid accidental power backfeeding to the console from the Pico's USB. If you omit it, make sure the USB is **ALWAYS** disconnected before plugging the Pico into the console.
 
 
 ![PicoNtrol2600 Layout](Images/PICO_W_Pinout.png)
 
 The colors in this image match the ones of an official, original Atari CX40 Joystick and the extra +5V wire.
 
-In case of need, here is the CX40 pinout. The controller cable plug is picture bottom left. 
+In case of need, here is the CX40 pinout.
 ![Atari CX40 Pinout](Images/Controller_Jack_Pinout.png)
 
 ## Installation
