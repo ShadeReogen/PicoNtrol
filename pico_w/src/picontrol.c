@@ -19,13 +19,9 @@
 // Joystick Analog dead zone
 #define DEAD_ZONE 150
 
-#define UP_BTN 0
-#define DOWN_BTN 1
-#define LEFT_BTN 2
-#define RIGHT_BTN 3
-#define FIRE_BTN 4
-#define INPUT_A 5 // Paddle A /Touch Tablet < ---   No idea how tf these work. Can't test them
-#define INPUT_B 6 // Paddle B /Touch Tablet < ---   I just know that the extra inputs are mapped to this.
+#define DATA_PIN 0
+#define LATCH_PIN 1
+#define PULSE_PIN 2
 
 // Declarations
 static void update_gamepad(uni_hid_device_t *d);
@@ -57,30 +53,16 @@ static void picontrol_on_init_complete(void)
     uni_bt_list_keys_unsafe();
 
     // Turn off LED once init is done.
-    stdio_init_all();
-    gpio_init(UP_BTN);
-    gpio_init(DOWN_BTN);
-    gpio_init(LEFT_BTN);
-    gpio_init(RIGHT_BTN);
-    gpio_init(FIRE_BTN);
 
-    /*
-    TODO:
-    Inactivce as I have no clue how to implement these.
-    What do they do? --> Need Paddle /Tablet
+    // INIT NES PINS TO GPIO OUT
+    gpio_init(DATA_PIN);
+    gpio_set_dir(DATA_PIN, GPIO_OUT);
 
-    gpio_init(INPUT_A);
-    gpio_init(INPUT_B);
-    gpio_set_dir(INPUT_A, GPIO_OUT);
-    gpio_set_dir(INPUT_B, GPIO_OUT);
+    gpio_init(LATCH_PIN);
+    gpio_set_dir(LATCH_PIN, GPIO_OUT);
 
-    */
-
-    gpio_set_dir(UP_BTN, GPIO_OUT);
-    gpio_set_dir(DOWN_BTN, GPIO_OUT);
-    gpio_set_dir(LEFT_BTN, GPIO_OUT);
-    gpio_set_dir(RIGHT_BTN, GPIO_OUT);
-    gpio_set_dir(FIRE_BTN, GPIO_OUT);
+    gpio_init(PULSE_PIN);
+    gpio_set_dir(PULSE_PIN, GPIO_OUT);
 
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
 }
@@ -109,10 +91,10 @@ static uni_error_t picontrol_on_device_ready(uni_hid_device_t *d)
 
 static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *ctl)
 {
-    static uint8_t leds = 0;
-    static uint8_t enabled = true;
+
     static uni_controller_t prev = {0};
     uni_gamepad_t *gp;
+    pio_put(DATA_PIN, true);
 
     if (memcmp(&prev, ctl, sizeof(*ctl)) == 0)
     {
@@ -128,184 +110,97 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
     case UNI_CONTROLLER_CLASS_GAMEPAD:
     {
         gp = &ctl->gamepad;
-        bool up = true, down = true, left = true, right = true;
-
-        if (gp->dpad == 0)
-        {
-            gpio_put(UP_BTN, up);
-            gpio_put(DOWN_BTN, down);
-            gpio_put(LEFT_BTN, left);
-            gpio_put(RIGHT_BTN, right);
-        }
 
         int x = gp->axis_x;
         int y = gp->axis_y;
+        // Wait for the NES to set the latch pin high
+        while (!gpio_get(LATCH_PIN))
+        {
+        }
+        logi("Clock HIGH\n");
 
         /*
-         * I set the Dpad to have a higher priority than the analog stick
          *
-         * Why?
-         * It is improbable that a user wants to input direction with both at the same time, so
-         * since accidental stick movement is more likely to happen compared to accidental dpad
-         * presses, the dpad input is prioritized.
-         * Feel free to change this and recompile or open an issue to discuss this.
-         *
-         * NdP: This if-else-hell approach is chosen mindfully, to reduce input lag.
          */
+
+        if ((gp->buttons == 128 && gp->throttle > 100) || gp->buttons == 1)
+        {
+            // Set A to true
+            pio_put(DATA_PIN, false);
+            logi("A\n");
+        }
+        sleep_us(6);
+        pio_put(DATA_PIN, true);
+
+        if (gp->buttons == 2)
+        {
+            // Set B to true
+            pio_put(DATA_PIN, false);
+            logi("B\n");
+        }
+        sleep_us(6);
+        pio_put(DATA_PIN, true);
+
+        //TODO: SELECT
+        sleep_us(6);
+        //TODO: START
+        sleep_us(6);
+
+
+        
+
+
+
+
         if (gp->dpad != 0)
         {
             if (gp->dpad == 5)
             {
-                right = false;
-                up = false;
+                // Set direction bits up & right to 1
                 logi("Diagonal URX\n");
             }
             else if (gp->dpad == 9)
             {
-                left = false;
-                up = false;
+                // Set direction bits up & left to 1
                 logi("Diagonal ULX\n");
             }
             else if (gp->dpad == 6)
             {
-                right = false;
-                down = false;
+                // Set direction bits down & right to 1
                 logi("Diagonal DRX\n");
             }
             else if (gp->dpad == 10)
             {
-                left = false;
-                down = false;
+                // Set direction bits down & left to 1
                 logi("Diagonal DLX\n");
             }
             else if (gp->dpad == 1)
             {
-                up = false;
-                down = true;
-                left = true;
-                right = true;
+                // Set direction bit up to 1
                 logi("UP\n");
             }
             else if (gp->dpad == 2)
             {
-                down = false;
-                up = true;
-                left = true;
-                right = true;
+                // Set direction bit down to 1
                 logi("DOWN\n");
             }
             else if (gp->dpad == 8)
             {
-                left = false;
-                up = true;
-                down = true;
-                right = true;
+                // Set direction bit left to 1
                 logi("LEFT\n");
             }
             else if (gp->dpad == 4)
             {
-                right = false;
-                up = true;
-                down = true;
-                left = true;
+                // Set direction bit right to 1
                 logi("RIGHT\n");
             }
         }
 
-        else if (!(fabs(x) < DEAD_ZONE && fabs(y) < DEAD_ZONE))
-        {
-            /*
-             * Cool nerdy math function to nail every analog position correctly 😎
-             */
-            double angle = atan2(y, x) * (180.0 / M_PI);
-
-            // Adjust angle to be positive
-            if (angle < 0)
-            {
-                angle += 360.0;
-            }
-
-            if (angle >= 22.5 && angle < 67.5)
-            {
-                right = false;
-                down = false;
-                logi("Down-Right\n");
-            }
-            else if (angle >= 67.5 && angle < 112.5)
-            {
-                down = false;
-                up = true;
-                left = true;
-                right = true;
-                logi("Down\n");
-            }
-            else if (angle >= 112.5 && angle < 157.5)
-            {
-                left = false;
-                down = false;
-                logi("Down-Left\n");
-            }
-            else if (angle >= 157.5 && angle < 202.5)
-            {
-                left = false;
-                up = true;
-                down = true;
-                right = true;
-                logi("Left\n");
-            }
-            else if (angle >= 202.5 && angle < 247.5)
-            {
-                left = false;
-                up = false;
-                logi("Up-Left\n");
-            }
-            else if (angle >= 247.5 && angle < 292.5)
-            {
-                up = false;
-                down = true;
-                left = true;
-                right = true;
-                logi("Up\n");
-            }
-            else if (angle >= 292.5 && angle < 337.5)
-            {
-                right = false;
-                up = false;
-                logi("Up-Right\n");
-            }
-            else
-            {
-                right = false;
-                up = true;
-                down = true;
-                left = true;
-                logi("Right\n");
-            }
-        }
-
-        // Handle button presses
-        if (gp->buttons == 0)
-        {
-            gpio_put(FIRE_BTN, true);
-        }
-
-        if (gp->buttons == 2)
-        {
-            up = false;
-            logi("UP\n");
-        }
-
         if ((gp->buttons == 128 && gp->throttle > 100) || gp->buttons == 1)
         {
-            gpio_put(FIRE_BTN, false);
-            logi("FIRE\n");
+            // Set "A" bit to 1
+            logi("A\n");
         }
-
-        // Set GPIOs based on direction
-        gpio_put(UP_BTN, up);
-        gpio_put(DOWN_BTN, down);
-        gpio_put(LEFT_BTN, left);
-        gpio_put(RIGHT_BTN, right);
     }
     break;
     default:
