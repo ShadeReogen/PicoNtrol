@@ -25,6 +25,7 @@
 
 // Declarations
 static void update_gamepad(uni_hid_device_t *d);
+bool buttonValues[8];
 
 //
 // Platform Overrides
@@ -59,10 +60,10 @@ static void picontrol_on_init_complete(void)
     gpio_set_dir(DATA_PIN, GPIO_OUT);
 
     gpio_init(LATCH_PIN);
-    gpio_set_dir(LATCH_PIN, GPIO_OUT);
+    gpio_set_dir(LATCH_PIN, GPIO_IN);
 
     gpio_init(PULSE_PIN);
-    gpio_set_dir(PULSE_PIN, GPIO_OUT);
+    gpio_set_dir(PULSE_PIN, GPIO_IN);
 
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
 }
@@ -94,7 +95,6 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
 
     static uni_controller_t prev = {0};
     uni_gamepad_t *gp;
-    pio_put(DATA_PIN, true);
 
     if (memcmp(&prev, ctl, sizeof(*ctl)) == 0)
     {
@@ -111,96 +111,34 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
     {
         gp = &ctl->gamepad;
 
-        int x = gp->axis_x;
-        int y = gp->axis_y;
-        // Wait for the NES to set the latch pin high
-        while (!gpio_get(LATCH_PIN))
+        buttonValues[0] = (gp->buttons & (1 << 1)) == 0;
+        buttonValues[1] = (gp->buttons & (1 << 2)) == 0;
+        buttonValues[2] = (gp->misc_buttons & (1 << 1)) == 0;
+        buttonValues[3] = (gp->misc_buttons & (1 << 3)) == 0;
+        buttonValues[4] = (gp->dpad & (1 << 0)) == 0;
+        buttonValues[5] = (gp->dpad & (1 << 1)) == 0;
+        buttonValues[6] = (gp->dpad & (1 << 2)) == 0;
+        buttonValues[7] = (gp->dpad & (1 << 3)) == 0;
+
+        /* if (!gpio_get(LATCH_PIN))
         {
-        }
-        logi("Clock HIGH\n");
-
-        /*
-         *
-         */
-
-        if ((gp->buttons == 128 && gp->throttle > 100) || gp->buttons == 1)
-        {
-            // Set A to true
-            pio_put(DATA_PIN, false);
-            logi("A\n");
-        }
-        sleep_us(6);
-        pio_put(DATA_PIN, true);
-
-        if (gp->buttons == 2)
-        {
-            // Set B to true
-            pio_put(DATA_PIN, false);
-            logi("B\n");
-        }
-        sleep_us(6);
-        pio_put(DATA_PIN, true);
-
-        //TODO: SELECT
-        sleep_us(6);
-        //TODO: START
-        sleep_us(6);
-
-
-        
-
-
-
-
-        if (gp->dpad != 0)
-        {
-            if (gp->dpad == 5)
-            {
-                // Set direction bits up & right to 1
-                logi("Diagonal URX\n");
-            }
-            else if (gp->dpad == 9)
-            {
-                // Set direction bits up & left to 1
-                logi("Diagonal ULX\n");
-            }
-            else if (gp->dpad == 6)
-            {
-                // Set direction bits down & right to 1
-                logi("Diagonal DRX\n");
-            }
-            else if (gp->dpad == 10)
-            {
-                // Set direction bits down & left to 1
-                logi("Diagonal DLX\n");
-            }
-            else if (gp->dpad == 1)
-            {
-                // Set direction bit up to 1
-                logi("UP\n");
-            }
-            else if (gp->dpad == 2)
-            {
-                // Set direction bit down to 1
-                logi("DOWN\n");
-            }
-            else if (gp->dpad == 8)
-            {
-                // Set direction bit left to 1
-                logi("LEFT\n");
-            }
-            else if (gp->dpad == 4)
-            {
-                // Set direction bit right to 1
-                logi("RIGHT\n");
-            }
-        }
-
-        if ((gp->buttons == 128 && gp->throttle > 100) || gp->buttons == 1)
-        {
-            // Set "A" bit to 1
-            logi("A\n");
-        }
+            gpio_put(DATA_PIN, a);
+            sleep_us(6);
+            gpio_put(DATA_PIN, b);
+            sleep_us(6);
+            gpio_put(DATA_PIN, sel);
+            sleep_us(6);
+            gpio_put(DATA_PIN, start);
+            sleep_us(6);
+            gpio_put(DATA_PIN, up);
+            sleep_us(6);
+            gpio_put(DATA_PIN, down);
+            sleep_us(6);
+            gpio_put(DATA_PIN, left);
+            sleep_us(6);
+            gpio_put(DATA_PIN, right);
+            sleep_us(6);
+        } */
     }
     break;
     default:
@@ -209,6 +147,15 @@ static void picontrol_on_controller_data(uni_hid_device_t *d, uni_controller_t *
     }
 }
 
+static void on_nes_poll()
+{
+
+    for (int i = 0; i < 8; i++)
+    {
+        gpio_put(DATA_PIN, buttonValues[i]);
+        sleep_us(6);
+    }
+}
 static const uni_property_t *picontrol_get_property(uni_property_idx_t idx)
 {
     // Deprecated
